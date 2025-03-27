@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Robolike</title>
+    <link rel="stylesheet" href="index.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body style="display: flex; margin: auto">
+    <div
+      style="
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 50%;
+        border-right: 1px inset black;
+      "
+    >
+      <h1>Robolike</h1>
+      <h2>Step One</h2>
+      <p>Log in with Instagram in window to the right</p>
+      <hr />
+      <h2>Step Two</h2>
+      <label for="hashtag">Choose a hashtag to like</label>
+      <input
+        id="inputHashtag"
+        name="inputHashtag"
+        style="
+          margin: 0 auto;
+          width: 100%;
+          max-width: 250px;
+          text-align: center;
+        "
+      />
+      <hr />
+      <h2>Step Three</h2>
+      <button id="btnStart">Start</button>
+      <hr />
+      <h2>Like History</h2>
+      <div style="overflow-x: auto; max-height: 400px">
+        <table id="likesTable" style="width: 100%; border-collapse: collapse">
+          <thead>
+            <tr>
+              <th style="padding: 8px; border: 1px solid #ddd">Created At</th>
+              <th style="padding: 8px; border: 1px solid #ddd">Post</th>
+              <th style="padding: 8px; border: 1px solid #ddd">Caption</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div style="width: 50%; height: 100%">
+      <webview
+        id="instagramWebview"
+        src="https://instagram.com"
+        style="width: 100%; height: 100%"
+        disablewebsecurity
+      ></webview>
+    </div>
+  </body>
+</html>

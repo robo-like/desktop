@@ -1,0 +1,25 @@
+* {
+  box-sizing:border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  margin: auto;
+  height: 100vh;
+}
+
+h1 {
+  margin: 0;
+}
+
+hr {
+  width: 100%;
+}
+
+button {
+  margin: 0 auto;
+  width: 300px;
+  padding: 8px;
+  font-size: 16px;
+}
