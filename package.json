@@ -1,7 +1,7 @@
 {
   "name": "robolike",
   "productName": "robolike",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Instagram AutoLiker",
   "main": "src/index.js",
   "scripts": {
