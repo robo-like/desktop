@@ -1,3 +1,6 @@
+// const BASE_URL = "http://localhost:5173";
+const BASE_URL = "https://beta.robolike.com";
+
 const MAX_LIKES_PER_DAY = 500;
 const MAX_LIKES_TO_STORE = MAX_LIKES_PER_DAY * 3;
 
@@ -12,8 +15,10 @@ const instagramWebview = document.getElementById("instagramWebview");
 
 const btnStart = document.getElementById("btnStart");
 const inputHashtag = document.getElementById("inputHashtag");
+const inputAccessToken = document.getElementById("inputAccessToken");
 
 inputHashtag.value = localStorage.getItem("hashtag");
+inputAccessToken.value = localStorage.getItem("accessToken");
 
 let likeInterval;
 
@@ -55,6 +60,8 @@ btnStart.addEventListener("click", async () => {
   if (!likeInterval) {
     const selectedHashtag = inputHashtag.value;
     localStorage.setItem("hashtag", selectedHashtag);
+    const accessToken = inputAccessToken.value;
+    localStorage.setItem("accessToken", accessToken);
 
     // Start the interval
     btnStart.innerText = "Stop";
@@ -70,10 +77,29 @@ btnStart.addEventListener("click", async () => {
         return;
       }
 
-      const res = await fetch(
-        `https://beta.robolike.com/api/instagram/hashtag/${selectedHashtag}/recent`
+      const recentMediaResponse = await fetch(
+        `${BASE_URL}/api/instagram/hashtag/${selectedHashtag}/recent`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
       );
-      const data = await res.json();
+
+      // Unauthorized
+      if (recentMediaResponse.status === 401) {
+        alert("Invalid access token");
+        return;
+      }
+
+      // Payment required
+      if (recentMediaResponse.status === 402) {
+        alert("Payment required");
+        return;
+      }
+
+      const data = await recentMediaResponse.json();
       if (data.posts) {
         const postToLike = data.posts.find(
           (post) => !likes.some((like) => like.id === post.id)

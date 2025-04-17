@@ -17,11 +17,10 @@
         border-right: 1px inset black;
       "
     >
-      <h1>Robolike</h1>
-      <h2>Step One</h2>
-      <p>Log in with Instagram in window to the right</p>
+      <p style="margin: 8px auto">
+        Log in with Instagram in the window to the right
+      </p>
       <hr />
-      <h2>Step Two</h2>
       <label for="hashtag">Choose a hashtag to like</label>
       <input
         id="inputHashtag"
@@ -29,17 +28,29 @@
         style="
           margin: 0 auto;
           width: 100%;
-          max-width: 250px;
+          max-width: 300px;
           text-align: center;
         "
       />
       <hr />
-      <h2>Step Three</h2>
-      <button id="btnStart">Start</button>
+      <label for="accessToken">Enter your access token</label>
+      <input
+        id="inputAccessToken"
+        name="inputAccessToken"
+        style="
+          margin: 0 auto;
+          width: 100%;
+          max-width: 300px;
+          text-align: center;
+        "
+      />
       <hr />
-      <h2>Like History</h2>
-      <div style="overflow-x: auto; max-height: 400px">
-        <table id="likesTable" style="width: 100%; border-collapse: collapse">
+      <button id="btnStart" style="margin: 8px auto">Start</button>
+      <div style="overflow-x: auto; height: 100%">
+        <table
+          id="likesTable"
+          style="width: 100%; border-collapse: collapse; height: 100%"
+        >
           <thead>
             <tr>
               <th style="padding: 8px; border: 1px solid #ddd">Created At</th>
