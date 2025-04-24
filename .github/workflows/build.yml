@@ -27,13 +27,12 @@ jobs:
     - name: Install Dependencies
       run: npm install
       
-    - name: Build Application
+      - name: Build Application
       run: |
         npm run make
-        if [ "${{ matrix.os }}" = "macos-latest" ]; then
+        if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
           npm run make:darwin:x64
         fi
-      
     # Optional: Upload artifacts
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4
