@@ -1,10 +1,7 @@
 const { FusesPlugin } = require("@electron-forge/plugin-fuses");
 const { FuseV1Options, FuseVersion } = require("@electron/fuses");
-const dotenv = require('dotenv');
+const dotenv = require("dotenv");
 dotenv.config();
-
-const { FusesPlugin } = require('@electron-forge/plugin-fuses');
-const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 
 module.exports = {
   packagerConfig: {
@@ -15,8 +12,8 @@ module.exports = {
     osxNotarize: {
       appleId: process.env.APPLE_ID,
       appleIdPassword: process.env.APPLE_PASSWORD,
-      teamId: process.env.APPLE_TEAM_ID
-    }
+      teamId: process.env.APPLE_TEAM_ID,
+    },
   },
   rebuildConfig: {},
   makers: [
@@ -25,8 +22,8 @@ module.exports = {
       config: {},
     },
     {
-      name: '@electron-forge/maker-dmg',
-      platforms: ['darwin'],
+      name: "@electron-forge/maker-dmg",
+      platforms: ["darwin"],
     },
     {
       name: "@electron-forge/maker-deb",
