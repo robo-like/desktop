@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest]
 
     steps:
     - uses: actions/checkout@v4
@@ -26,13 +26,13 @@ jobs:
     
     - name: Install Dependencies
       run: npm install
-      
+    
     - name: Build Application
-      run: npm run make
-      
-    # Optional: Upload artifacts
+      run: |
+        npm run make
+    
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.os }}-build
-        path: out/make/**/* 
+        path: out/make/**/*

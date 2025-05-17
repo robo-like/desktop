@@ -33,6 +33,30 @@
         "
       />
       <hr />
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <label>Automation Time Range</label>
+        <div style="display: flex; justify-content: center; gap: 16px">
+          <div>
+            <label for="startTime">Start Time:</label>
+            <input
+              type="time"
+              id="startTime"
+              name="startTime"
+              style="margin: 0 auto; text-align: center"
+            />
+          </div>
+          <div>
+            <label for="endTime">End Time:</label>
+            <input
+              type="time"
+              id="endTime"
+              name="endTime"
+              style="margin: 0 auto; text-align: center"
+            />
+          </div>
+        </div>
+      </div>
+      <hr />
       <button id="btnStart" style="margin: 8px auto">Start</button>
       <div style="overflow-x: auto; height: 100%">
         <table

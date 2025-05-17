@@ -17,6 +17,12 @@ const btnStart = document.getElementById("btnStart");
 const inputHashtag = document.getElementById("inputHashtag");
 
 inputHashtag.value = localStorage.getItem("hashtag");
+const startTime = document.getElementById("startTime");
+const endTime = document.getElementById("endTime");
+
+inputHashtag.value = localStorage.getItem("hashtag");
+startTime.value = localStorage.getItem("startTime") || "00:00";
+endTime.value = localStorage.getItem("endTime") || "23:59";
 
 let likeInterval;
 
@@ -54,6 +60,19 @@ function updateLikesTable() {
 // Call updateLikesTable initially
 updateLikesTable();
 
+function isWithinTimeRange() {
+  const now = new Date();
+  const currentTime = now.getHours() * 60 + now.getMinutes();
+
+  const [startHour, startMinute] = startTime.value.split(":").map(Number);
+  const [endHour, endMinute] = endTime.value.split(":").map(Number);
+
+  const startMinutes = startHour * 60 + startMinute;
+  const endMinutes = endHour * 60 + endMinute;
+
+  return currentTime >= startMinutes && currentTime <= endMinutes;
+}
+
 btnStart.addEventListener("click", async () => {
   if (!likeInterval) {
     const selectedHashtag = inputHashtag.value;
@@ -62,12 +81,17 @@ btnStart.addEventListener("click", async () => {
       "accessToken"
     );
 
-    console.log(window.location.search, accessToken);
+    localStorage.setItem("startTime", startTime.value);
+    localStorage.setItem("endTime", endTime.value);
 
     // Start the interval
     btnStart.innerText = "Stop";
 
     const likePost = async () => {
+      if (!isWithinTimeRange()) {
+        return;
+      }
+
       const todayLikes = likes.filter((like) => {
         const likeDate = new Date(like.timestamp);
         const today = new Date();
