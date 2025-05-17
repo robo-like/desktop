@@ -1,5 +1,5 @@
-const BASE_URL = "http://localhost:5173";
-// const BASE_URL = "https://robolike.com";
+// const BASE_URL = "http://localhost:5173";
+const BASE_URL = "https://robolike.com";
 
 const MAX_LIKES_PER_DAY = 500;
 const MAX_LIKES_TO_STORE = MAX_LIKES_PER_DAY * 3;
