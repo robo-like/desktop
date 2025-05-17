@@ -18,6 +18,7 @@
   "keywords": [],
   "license": "MIT",
   "dependencies": {
+    "dotenv": "^16.5.0",
     "electron-squirrel-startup": "^1.0.1"
   },
   "devDependencies": {

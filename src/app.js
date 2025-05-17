@@ -1,5 +1,5 @@
-// const BASE_URL = "http://localhost:5173";
-const BASE_URL = "https://beta.robolike.com";
+const BASE_URL = "http://localhost:5173";
+// const BASE_URL = "https://robolike.com";
 
 const MAX_LIKES_PER_DAY = 500;
 const MAX_LIKES_TO_STORE = MAX_LIKES_PER_DAY * 3;
@@ -15,10 +15,8 @@ const instagramWebview = document.getElementById("instagramWebview");
 
 const btnStart = document.getElementById("btnStart");
 const inputHashtag = document.getElementById("inputHashtag");
-const inputAccessToken = document.getElementById("inputAccessToken");
 
 inputHashtag.value = localStorage.getItem("hashtag");
-inputAccessToken.value = localStorage.getItem("accessToken");
 
 let likeInterval;
 
@@ -60,8 +58,11 @@ btnStart.addEventListener("click", async () => {
   if (!likeInterval) {
     const selectedHashtag = inputHashtag.value;
     localStorage.setItem("hashtag", selectedHashtag);
-    const accessToken = inputAccessToken.value;
-    localStorage.setItem("accessToken", accessToken);
+    const accessToken = new URLSearchParams(window.location.search).get(
+      "accessToken"
+    );
+
+    console.log(window.location.search, accessToken);
 
     // Start the interval
     btnStart.innerText = "Stop";
@@ -89,7 +90,7 @@ btnStart.addEventListener("click", async () => {
 
       // Unauthorized
       if (recentMediaResponse.status === 401) {
-        alert("Invalid access token");
+        alert("Unauthorized");
         return;
       }
 
