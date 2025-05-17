@@ -1,5 +1,5 @@
-// const BASE_URL = "http://localhost:5173";
-const BASE_URL = "https://beta.robolike.com";
+const BASE_URL = "http://localhost:5173";
+// const BASE_URL = "https://robolike.com";
 
 const MAX_LIKES_PER_DAY = 500;
 const MAX_LIKES_TO_STORE = MAX_LIKES_PER_DAY * 3;
@@ -15,12 +15,12 @@ const instagramWebview = document.getElementById("instagramWebview");
 
 const btnStart = document.getElementById("btnStart");
 const inputHashtag = document.getElementById("inputHashtag");
-const inputAccessToken = document.getElementById("inputAccessToken");
+
+inputHashtag.value = localStorage.getItem("hashtag");
 const startTime = document.getElementById("startTime");
 const endTime = document.getElementById("endTime");
 
 inputHashtag.value = localStorage.getItem("hashtag");
-inputAccessToken.value = localStorage.getItem("accessToken");
 startTime.value = localStorage.getItem("startTime") || "00:00";
 endTime.value = localStorage.getItem("endTime") || "23:59";
 
@@ -63,13 +63,13 @@ updateLikesTable();
 function isWithinTimeRange() {
   const now = new Date();
   const currentTime = now.getHours() * 60 + now.getMinutes();
-  
-  const [startHour, startMinute] = startTime.value.split(':').map(Number);
-  const [endHour, endMinute] = endTime.value.split(':').map(Number);
-  
+
+  const [startHour, startMinute] = startTime.value.split(":").map(Number);
+  const [endHour, endMinute] = endTime.value.split(":").map(Number);
+
   const startMinutes = startHour * 60 + startMinute;
   const endMinutes = endHour * 60 + endMinute;
-  
+
   return currentTime >= startMinutes && currentTime <= endMinutes;
 }
 
@@ -77,8 +77,10 @@ btnStart.addEventListener("click", async () => {
   if (!likeInterval) {
     const selectedHashtag = inputHashtag.value;
     localStorage.setItem("hashtag", selectedHashtag);
-    const accessToken = inputAccessToken.value;
-    localStorage.setItem("accessToken", accessToken);
+    const accessToken = new URLSearchParams(window.location.search).get(
+      "accessToken"
+    );
+
     localStorage.setItem("startTime", startTime.value);
     localStorage.setItem("endTime", endTime.value);
 
@@ -112,7 +114,7 @@ btnStart.addEventListener("click", async () => {
 
       // Unauthorized
       if (recentMediaResponse.status === 401) {
-        alert("Invalid access token");
+        alert("Unauthorized");
         return;
       }
 
