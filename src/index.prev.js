@@ -8,45 +8,6 @@ const baseUrl = process.env.BASE_URL || "https://robolike.com";
 let mainWindow;
 let deeplinkingUrl = null;
 
-/**
- * Check if user is authenticated by testing access to a protected endpoint
- * @returns {Promise<boolean>} - True if authenticated, false otherwise
- */
-async function checkAuthStatus() {
-  try {
-    const { net, session } = require('electron');
-
-    // Create a request to check authentication status with session cookies
-    const request = net.request({
-      method: 'GET',
-      url: `${baseUrl}/api/auth/status`,
-      useSessionCookies: true, // Use cookies from the session
-      session: session.defaultSession, // Use the default session
-    });
-
-    return new Promise((resolve) => {
-      request.on('response', (response) => {
-        console.log('Auth status response:', response.statusCode);
-        if (response.statusCode === 200) {
-          resolve(true);
-        } else {
-          resolve(false);
-        }
-      });
-
-      request.on('error', (error) => {
-        console.error('Auth request error:', error);
-        resolve(false);
-      });
-
-      request.end();
-    });
-  } catch (error) {
-    console.error('Auth check error:', error);
-    return false;
-  }
-}
-
 // Protocol handler setup
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
@@ -110,7 +71,7 @@ const createWindow = () => {
   mainWindow = new BrowserWindow({
     width,
     height,
-    title: "RoboLike - Instagram Automation",
+    icon: path.join(__dirname, "icons/ios/iTunesArtwork@2x.png"),
     webPreferences: {
       webviewTag: true,
       nodeIntegration: false,
@@ -118,19 +79,13 @@ const createWindow = () => {
     },
   });
 
-  // Check authentication status before deciding where to navigate
-  checkAuthStatus().then((isLoggedIn) => {
-    if (!isLoggedIn) {
-      mainWindow.loadURL(`${baseUrl}/auth/login`);
-    } else {
-      1
-      loadMainApp({});
-    }
-  }).catch((error) => {
-    console.error('Auth check failed:', error);
-    // If auth check fails, go to login
+  const isLoggedIn = false;
+
+  if (!isLoggedIn) {
     mainWindow.loadURL(`${baseUrl}/auth/login`);
-  });
+  } else {
+    loadMainApp();
+  }
 
   if (deeplinkingUrl) {
     handleUrl(deeplinkingUrl);

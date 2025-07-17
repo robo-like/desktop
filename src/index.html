@@ -1,86 +1,110 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>Robolike</title>
-    <link rel="stylesheet" href="index.css" />
-    <script src="app.js" defer></script>
-  </head>
-  <body style="display: flex; margin: auto">
-    <div
-      style="
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        width: 50%;
-        border-right: 1px inset black;
-      "
-    >
-      <p style="margin: 8px auto">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>RoboLike - Instagram Automation</title>
+  <link rel="stylesheet" href="index.css" />
+  <script src="app.js" defer></script>
+</head>
+
+<body>
+  <div class="resize-overlay"></div>
+  <div class="app-container">
+    <!-- Left Sidebar with Controls -->
+    <div class="sidebar">
+      <div class="resize-handle"></div>
+      <!-- Header -->
+      <div class="header">
+        <div class="logo">
+          <img src="icons/icon.png" alt="RoboLike" class="logo-icon">
+          <span class="logo-text">RoboLike</span>
+        </div>
+        <p class="subtitle">Instagram Automation Tool</p>
+      </div>
+
+      <!-- Breadcrumb -->
+      <div class="breadcrumb" style="display: none;">
+        <a href="#" id="backToProfileLink">← Back to Profile</a>
+      </div>
+
+      <!-- Login Status Message -->
+      <div class="login-message">
+        <span class="status-indicator info"></span>
         Log in with Instagram in the window to the right
-      </p>
-      <hr />
-      <label for="hashtag">Choose a hashtag to like</label>
-      <input
-        id="inputHashtag"
-        name="inputHashtag"
-        style="
-          margin: 0 auto;
-          width: 100%;
-          max-width: 300px;
-          text-align: center;
-        "
-      />
-      <hr />
-      <div style="display: flex; flex-direction: column; gap: 8px">
-        <label>Automation Time Range</label>
-        <div style="display: flex; justify-content: center; gap: 16px">
-          <div>
-            <label for="startTime">Start Time:</label>
-            <input
-              type="time"
-              id="startTime"
-              name="startTime"
-              style="margin: 0 auto; text-align: center"
-            />
+      </div>
+
+      <!-- Main Content -->
+      <div id="mainContent" class="main-content">
+        <!-- Hashtag Selection -->
+        <div class="form-section">
+          <h3>Target Hashtag</h3>
+          <div class="form-group">
+            <label for="inputHashtag">Choose a hashtag to like</label>
+            <input id="inputHashtag" name="inputHashtag" class="form-input" placeholder="#nature" />
           </div>
-          <div>
-            <label for="endTime">End Time:</label>
-            <input
-              type="time"
-              id="endTime"
-              name="endTime"
-              style="margin: 0 auto; text-align: center"
-            />
+        </div>
+
+        <!-- Time Range Controls -->
+        <div class="form-section">
+          <h3>Automation Schedule</h3>
+          <div class="time-range">
+            <div class="time-group">
+              <label for="startTime">Start Time</label>
+              <input type="time" id="startTime" name="startTime" class="time-input" />
+            </div>
+            <div class="time-group">
+              <label for="endTime">End Time</label>
+              <input type="time" id="endTime" name="endTime" class="time-input" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Control Button -->
+        <div class="form-section">
+          <button id="btnStart" class="btn-primary">Start Automation</button>
+        </div>
+
+        <!-- Status Section -->
+        <div class="form-section status-section" id="statusSection" style="display: none;">
+          <h3>Automation Status</h3>
+          <div class="status-indicator-container">
+            <div class="spinning-wheel"></div>
+            <p class="status-text">Automation is running...</p>
+          </div>
+          <p class="countdown-text" id="countdownText">Next action in: --</p>
+        </div>
+
+        <!-- Likes History -->
+        <div class="form-section likes-section">
+          <h3>Recent Activity</h3>
+          <div class="likes-table-container">
+            <table id="likesTable" class="likes-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Post</th>
+                  <th>Caption</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
       </div>
-      <hr />
-      <button id="btnStart" style="margin: 8px auto">Start</button>
-      <div style="overflow-x: auto; height: 100%">
-        <table
-          id="likesTable"
-          style="width: 100%; border-collapse: collapse; height: 100%"
-        >
-          <thead>
-            <tr>
-              <th style="padding: 8px; border: 1px solid #ddd">Created At</th>
-              <th style="padding: 8px; border: 1px solid #ddd">Post</th>
-              <th style="padding: 8px; border: 1px solid #ddd">Caption</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+    </div>
+
+    <!-- Right Content Area with Instagram Webview -->
+    <div class="content-area">
+      <div class="webview-container">
+        <div class="webview-header">
+          <h2 class="webview-title">Instagram</h2>
+          <p class="webview-subtitle">Please log in to your Instagram account</p>
+        </div>
+        <webview id="instagramWebview" src="https://instagram.com" class="webview" disablewebsecurity></webview>
       </div>
     </div>
-    <div style="width: 50%; height: 100%">
-      <webview
-        id="instagramWebview"
-        src="https://instagram.com"
-        style="width: 100%; height: 100%"
-        disablewebsecurity
-      ></webview>
-    </div>
-  </body>
+  </div>
+</body>
+
 </html>
