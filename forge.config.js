@@ -22,7 +22,7 @@ module.exports = {
       name: "@electron-forge/maker-squirrel",
       config: {
         iconUrl: "https://robolike.com/favicon.ico",
-        setupIcon: "./src/icons/win/icon.ico",
+        setupIcon: "./src/icons/icon.ico",
       },
     },
     {
