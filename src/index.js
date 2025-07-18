@@ -140,6 +140,12 @@ const createWindow = () => {
 app.whenReady().then(() => {
   createWindow();
 
+  // Set dock icon for macOS
+  if (process.platform === 'darwin') {
+    // app.dock.setBadge("👍");
+    app.dock.setIcon(path.join(process.cwd(), "icons", "icon.png"))
+  }
+
   // macOS: handle URI
   app.on("open-url", (event, url) => {
     event.preventDefault();
