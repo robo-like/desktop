@@ -1,6 +1,16 @@
-const BASE_URL = window.electronAPI.getBaseUrl();
+let BASE_URL;
+let config;
 const MAX_LIKES_PER_DAY = 500;
 const MAX_LIKES_TO_STORE = MAX_LIKES_PER_DAY * 3;
+
+// Initialize config asynchronously
+async function initConfig() {
+  BASE_URL = await window.electronAPI.getBaseUrl();
+  config = await window.electronAPI.getConfig();
+}
+
+// Initialize config when the page loads
+initConfig();
 
 let likes;
 try {
@@ -23,6 +33,8 @@ startTime.value = localStorage.getItem("startTime") || "00:00";
 endTime.value = localStorage.getItem("endTime") || "23:59";
 
 let likeInterval;
+let likesStartTime = null;
+let likesCount = 0;
 
 function isValidDate(date) {
   return date instanceof Date && !isNaN(date);
@@ -36,61 +48,62 @@ async function isLoggedIntoInstagram() {
   try {
     const result = await instagramWebview.executeJavaScript(`
       (function() {
-        // Check for elements that indicate user is logged in
-        const loginIndicators = [
-          // Profile button/navbar elements
-          'nav[role="navigation"] a[href*="/accounts/activity/"]',
-          'nav[role="navigation"] a[href*="/accounts/edit/"]',
-          'nav[role="navigation"] a[href*="/accounts/"]',
-          // Direct message button
-          'a[href="/direct/inbox/"]',
-          // Create post button
-          'a[href="/create/select/"]',
-          // Activity button
-          'a[href="/accounts/activity/"]',
-          // Profile picture in nav
-          'nav img[alt*="profile picture"]',
-          // Logged in specific elements
-          'div[data-testid="user-avatar"]',
-          // Check if we're not on login page
-          'input[name="username"]',
-          'input[name="password"]'
-        ];
-        
-        // If we find login form elements, we're not logged in
+        // First check if we're on the login page
         const loginForm = document.querySelector('input[name="username"]') || 
-                         document.querySelector('input[name="password"]');
-        if (loginForm) {
+                         document.querySelector('input[name="password"]') ||
+                         document.querySelector('form[method="post"]') ||
+                         document.querySelector('button[type="submit"]');
+        if (loginForm && (
+          window.location.pathname === '/accounts/login/' ||
+          window.location.pathname === '/accounts/login' ||
+          window.location.pathname === '/login' ||
+          window.location.pathname === '/login/'
+        )) {
           return false;
         }
         
-        // Check for logged in indicators
-        for (const selector of loginIndicators) {
-          if (selector.includes('input[name=')) {
-            continue; // Skip login form selectors
-          }
+        // Check for logged in indicators (simpler approach)
+        const loggedInIndicators = [
+          // Navigation elements that only appear when logged in
+          'nav a[href="/"]', // Home link in nav
+          'nav a[href*="/direct/"]', // Messages
+          'nav a[href*="/explore/"]', // Explore
+          'nav a[href*="/accounts/activity/"]', // Activity
+          'nav a[href*="/accounts/edit/"]', // Settings
+          'a[href="/accounts/logout/"]', // Logout link
+          'div[data-testid="user-avatar"]', // User avatar
+          'nav img[alt*="profile picture"]', // Profile picture
+          'svg[aria-label="Home"]', // Home icon
+          'svg[aria-label="New post"]', // New post icon
+          'svg[aria-label="Find People"]', // Find people icon
+          'svg[aria-label="Activity Feed"]', // Activity icon
+        ];
+        
+        // If any logged in indicator is found, user is logged in
+        for (const selector of loggedInIndicators) {
           if (document.querySelector(selector)) {
+            console.log('Found logged in indicator:', selector);
             return true;
           }
         }
         
-        // Additional check: look for logout button or user menu
-        const logoutButton = document.querySelector('a[href="/accounts/logout/"]') ||
-                           document.querySelector('button[data-testid="logout-button"]');
-        if (logoutButton) {
+        // Check if we're on a page that requires authentication
+        // and we're not seeing a login form
+        const requiresAuth = window.location.pathname === '/' ||
+                           window.location.pathname.includes('/p/') ||
+                           window.location.pathname.includes('/reel/') ||
+                           window.location.pathname.includes('/explore/') ||
+                           window.location.pathname.includes('/direct/');
+        
+        if (requiresAuth && !loginForm) {
           return true;
         }
         
-        // Check if we're on a page that requires login (like feed)
-        const isOnFeed = window.location.pathname === '/' || 
-                        window.location.pathname.includes('/p/') ||
-                        window.location.pathname.includes('/reel/');
-        
-        // If we're on feed but no login indicators found, assume not logged in
         return false;
       })();
     `);
 
+    console.log('Instagram login check result:', result);
     return result;
   } catch (error) {
     console.error('Error checking Instagram login status:', error);
@@ -217,16 +230,25 @@ initializeSidebarResize();
 /**
  * Update UI elements based on Instagram login status
  */
+let wasLoggedIn = false;
+
 async function updateLoginStatusUI() {
   const isLoggedIn = await isLoggedIntoInstagram();
   const loginMessage = document.querySelector('.login-message');
   const mainContent = document.getElementById('mainContent');
   const webviewHeader = document.querySelector('.webview-header');
-  const breadcrumb = document.querySelector('.breadcrumb');
 
   if (!loginMessage || !mainContent) {
     setTimeout(updateLoginStatusUI, 500);
     return;
+  }
+
+  // Track login event when user goes from not logged in to logged in
+  if (isLoggedIn && !wasLoggedIn) {
+    await window.electronAPI.analytics.trackAppLogin('instagram');
+    wasLoggedIn = true;
+  } else if (!isLoggedIn) {
+    wasLoggedIn = false;
   }
 
   if (isLoggedIn) {
@@ -236,9 +258,6 @@ async function updateLoginStatusUI() {
     if (webviewHeader) {
       webviewHeader.style.display = 'none';
     }
-    if (breadcrumb) {
-      breadcrumb.style.display = 'flex';
-    }
   } else {
     setTimeout(updateLoginStatusUI, 800);
     loginMessage.style.display = 'block';
@@ -246,18 +265,21 @@ async function updateLoginStatusUI() {
     if (webviewHeader) {
       webviewHeader.style.display = 'block';
     }
-    if (breadcrumb) {
-      breadcrumb.style.display = 'none';
-    }
   }
 }
 
 // Check login status periodically and update UI
-updateLoginStatusUI(); // Check immediately on load
+// Wait for config to be initialized before checking login status
+initConfig().then(() => {
+  updateLoginStatusUI(); // Check immediately on load
+});
 
 // Back to Profile breadcrumb functionality
-document.getElementById('backToProfileLink').addEventListener('click', (e) => {
+document.getElementById('backToProfileLink').addEventListener('click', async (e) => {
   e.preventDefault();
+  if (!BASE_URL) {
+    await initConfig();
+  }
   window.location.href = `${BASE_URL}/u/profile`;
 });
 
@@ -285,8 +307,21 @@ btnStart.addEventListener("click", async () => {
       "accessToken"
     );
 
+    // Set access token for analytics
+    if (accessToken) {
+      await window.electronAPI.analytics.setAccessToken(accessToken);
+    }
+
     localStorage.setItem("startTime", startTime.value);
     localStorage.setItem("endTime", endTime.value);
+
+    // Track likes started
+    likesStartTime = Date.now();
+    likesCount = 0;
+    await window.electronAPI.analytics.trackLikesStarted({
+      hashtag: selectedHashtag,
+      maxLikes: MAX_LIKES_PER_DAY
+    });
 
     // Update button to stop state
     btnStart.innerText = "Stop Automation";
@@ -302,6 +337,11 @@ btnStart.addEventListener("click", async () => {
     const likePost = async () => {
       if (!isWithinTimeRange()) {
         return;
+      }
+
+      // Ensure config is loaded
+      if (!BASE_URL) {
+        await initConfig();
       }
 
       const todayLikes = likes.filter((like) => {
@@ -326,12 +366,14 @@ btnStart.addEventListener("click", async () => {
 
       // Unauthorized
       if (recentMediaResponse.status === 401) {
+        await window.electronAPI.analytics.trackAppError('authFailed', 'Unauthorized access to Instagram API', '401');
         alert("Unauthorized");
         return;
       }
 
       // Payment required
       if (recentMediaResponse.status === 402) {
+        await window.electronAPI.analytics.trackAppError('paymentRequired', 'Payment required for Instagram API', '402');
         alert("Payment required");
         return;
       }
@@ -368,6 +410,14 @@ btnStart.addEventListener("click", async () => {
         });
         localStorage.setItem("likes", JSON.stringify(likes));
         updateLikesTable();
+
+        // Track individual post liked
+        likesCount++;
+        await window.electronAPI.analytics.trackPostLiked({
+          id: postToLike.id,
+          hashtag: selectedHashtag,
+          likesCount: postToLike.like_count
+        });
       }
     };
 
@@ -375,6 +425,10 @@ btnStart.addEventListener("click", async () => {
     likePost();
     likeInterval = setInterval(likePost, 60000);
   } else {
+    // Track likes stopped
+    const duration = Math.floor((Date.now() - likesStartTime) / 1000);
+    await window.electronAPI.analytics.trackLikesStopped('manual', likesCount, duration);
+
     // Stop the interval
     clearInterval(likeInterval);
     likeInterval = null;
