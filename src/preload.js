@@ -1,6 +1,6 @@
-const { contextBridge } = require('electron');
+const { contextBridge } = require("electron");
 
 // Expose baseUrl to renderer process
-contextBridge.exposeInMainWorld('electronAPI', {
-   getBaseUrl: () => process.env.BASE_URL || "https://robolike.com"
+contextBridge.exposeInMainWorld("electronAPI", {
+  getBaseUrl: () => process.env.BASE_URL || "https://www.robolike.com",
 });
