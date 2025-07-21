@@ -6,6 +6,7 @@ dotenv.config();
 module.exports = {
   packagerConfig: {
     asar: true,
+    icon: "./icons/icon", // Base name, platform extensions added automatically
     osxSign: {
       identity: process.env.APPLE_SIGN_IDENTITY,
     },
@@ -19,15 +20,23 @@ module.exports = {
   makers: [
     {
       name: "@electron-forge/maker-squirrel",
-      config: {},
+      config: {
+        iconUrl: "https://robolike.com/favicon.ico",
+        setupIcon: "./icons/icon.ico",
+      },
     },
     {
       name: "@electron-forge/maker-dmg",
       platforms: ["darwin"],
+      config: {
+        icon: "./icons/icon.icns",
+      },
     },
     {
       name: "@electron-forge/maker-deb",
-      config: {},
+      config: {
+        icon: "./icons/icon.png",
+      },
     },
   ],
   plugins: [
