@@ -5,6 +5,7 @@ const analytics = require("./analytics");
 
 let mainWindow;
 let deeplinkingUrl = null;
+let storedAccessToken = null;
 
 /**
  * Check if user is authenticated by testing access to a protected endpoint
@@ -143,6 +144,65 @@ ipcMain.handle('config:getConfig', () => {
   return config;
 });
 
+// Setup IPC handler for access token
+ipcMain.handle('auth:getAccessToken', () => {
+  return storedAccessToken;
+});
+
+// Setup IPC handler for Instagram API requests
+ipcMain.handle('instagram:getRecentMedia', async (event, hashtag) => {
+  try {
+    const { net, session } = require('electron');
+
+    const request = net.request({
+      method: 'GET',
+      url: `${config.baseUrl}/api/instagram/hashtag/${hashtag}/recent`,
+      useSessionCookies: true,
+      session: session.defaultSession,
+    });
+
+    request.setHeader('Content-Type', 'application/json');
+
+    return new Promise((resolve) => {
+      request.on('response', (response) => {
+        let body = '';
+        response.on('data', (chunk) => {
+          body += chunk;
+        });
+        response.on('end', () => {
+          try {
+            const data = JSON.parse(body);
+            resolve({
+              status: response.statusCode,
+              data: data
+            });
+          } catch (error) {
+            resolve({
+              status: response.statusCode,
+              error: 'Failed to parse response',
+              body: body
+            });
+          }
+        });
+      });
+
+      request.on('error', (error) => {
+        resolve({
+          status: 0,
+          error: error.message
+        });
+      });
+
+      request.end();
+    });
+  } catch (error) {
+    return {
+      status: 0,
+      error: error.message
+    };
+  }
+});
+
 // Setup IPC handlers for analytics
 ipcMain.handle('analytics:setAccessToken', (event, token) => {
   analytics.setAccessToken(token);
@@ -206,9 +266,16 @@ app.whenReady().then(() => {
     if (url.includes(`${config.app.protocol}://likes`)) {
       const urlObj = new URL(url);
       const searchParams = Object.fromEntries(urlObj.searchParams);
-      loadMainApp({
-        query: searchParams,
-      });
+      
+      // Securely store access token in main process
+      if (searchParams.accessToken) {
+        storedAccessToken = searchParams.accessToken;
+        analytics.setAccessToken(storedAccessToken);
+        console.log('Access token received and stored securely');
+      }
+      
+      // Load main app without passing access token in query params
+      loadMainApp({});
     }
   });
 });
