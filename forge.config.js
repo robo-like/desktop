@@ -7,14 +7,10 @@ module.exports = {
   packagerConfig: {
     asar: true,
     icon: "./icons/icon", // Base name, platform extensions added automatically
-    // Explicitly disable signing for local development
     osxSign: false,
     osxNotarize: false,
-    // Enable signing only in CI with ALL required credentials
-    ...(process.env.CI && 
-        process.env.APPLE_SIGN_IDENTITY && 
-        process.env.APPLE_CERTIFICATE && 
-        process.env.APPLE_ID ? {
+    ...(process.env.APPLE_SIGN_IDENTITY &&
+      process.env.APPLE_CERTIFICATE ? {
       osxSign: {
         identity: process.env.APPLE_SIGN_IDENTITY,
         'hardened-runtime': true,

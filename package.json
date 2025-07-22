@@ -8,6 +8,7 @@
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
+    "make:signed": "node -r dotenv/config node_modules/.bin/electron-forge make",
     "make:darwin:arm64": "electron-forge make --platform=darwin --arch=arm64",
     "make:darwin:x64": "electron-forge make --platform=darwin --arch=x64",
     "publish": "electron-forge publish",
