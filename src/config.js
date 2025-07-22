@@ -6,8 +6,8 @@
 require('dotenv').config();
 
 const config = {
-  baseUrl: process.env.BASE_URL || "https://robolike.com",
-  
+  baseUrl: process.env.BASE_URL || "https://www.robolike.com",
+
   // API endpoints
   api: {
     auth: {
@@ -15,7 +15,7 @@ const config = {
     },
     metrics: '/api/metrics'
   },
-  
+
   // App settings
   app: {
     protocol: 'robolike',

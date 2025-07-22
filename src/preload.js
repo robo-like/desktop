@@ -5,6 +5,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
    getBaseUrl: () => ipcRenderer.invoke('config:getBaseUrl'),
    getConfig: () => ipcRenderer.invoke('config:getConfig'),
    
+   // Auth methods
+   auth: {
+     getAccessToken: () => ipcRenderer.invoke('auth:getAccessToken')
+   },
+   
+   // Instagram API methods
+   instagram: {
+     getRecentMedia: (hashtag) => ipcRenderer.invoke('instagram:getRecentMedia', hashtag)
+   },
+   
    // Analytics methods
    analytics: {
      setAccessToken: (token) => ipcRenderer.invoke('analytics:setAccessToken', token),
