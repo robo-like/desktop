@@ -10,8 +10,11 @@ module.exports = {
     // Explicitly disable signing for local development
     osxSign: false,
     osxNotarize: false,
-    // Enable signing only in CI with proper credentials
-    ...(process.env.CI && process.env.APPLE_SIGN_IDENTITY ? {
+    // Enable signing only in CI with ALL required credentials
+    ...(process.env.CI && 
+        process.env.APPLE_SIGN_IDENTITY && 
+        process.env.APPLE_CERTIFICATE && 
+        process.env.APPLE_ID ? {
       osxSign: {
         identity: process.env.APPLE_SIGN_IDENTITY,
         'hardened-runtime': true,

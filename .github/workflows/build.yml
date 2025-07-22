@@ -43,7 +43,7 @@ jobs:
           echo "✅ APPLE_SIGN_IDENTITY is available"
         fi
         
-        if [ -z "${{ secrets.APPLE_CERTIFICATE }}" ]; then
+        if [ -z "$APPLE_CERTIFICATE" ]; then
           echo "❌ APPLE_CERTIFICATE is not set or empty"
         else
           echo "✅ APPLE_CERTIFICATE is available"
@@ -51,6 +51,7 @@ jobs:
       env:
         APPLE_ID: ${{ secrets.APPLE_ID }}
         APPLE_SIGN_IDENTITY: ${{ secrets.APPLE_SIGN_IDENTITY }}
+        APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
     
     - name: Setup Apple Certificate (macOS only)
       if: matrix.os == 'macos-latest'
@@ -81,6 +82,7 @@ jobs:
         APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
         APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         APPLE_SIGN_IDENTITY: ${{ secrets.APPLE_SIGN_IDENTITY }}
+        APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
     
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4
