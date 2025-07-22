@@ -7,14 +7,22 @@ module.exports = {
   packagerConfig: {
     asar: true,
     icon: "./icons/icon", // Base name, platform extensions added automatically
-    osxSign: {
-      identity: process.env.APPLE_SIGN_IDENTITY,
-    },
-    osxNotarize: {
-      appleId: process.env.APPLE_ID,
-      appleIdPassword: process.env.APPLE_PASSWORD,
-      teamId: process.env.APPLE_TEAM_ID,
-    },
+    // Enable signing in CI or when certificate is available
+    ...(process.env.CI && process.env.APPLE_SIGN_IDENTITY ? {
+      osxSign: {
+        identity: process.env.APPLE_SIGN_IDENTITY,
+        'hardened-runtime': true,
+        'gatekeeper-assess': false,
+      },
+      osxNotarize: {
+        appleId: process.env.APPLE_ID,
+        appleIdPassword: process.env.APPLE_PASSWORD,
+        teamId: process.env.APPLE_TEAM_ID,
+      },
+    } : {
+      osxSign: false,
+      osxNotarize: false,
+    }),
   },
   rebuildConfig: {},
   makers: [
