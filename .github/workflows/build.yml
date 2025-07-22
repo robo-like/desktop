@@ -27,9 +27,60 @@ jobs:
     - name: Install Dependencies
       run: npm install
     
-    - name: Build Application
+    - name: Debug Environment Variables (macOS only)
+      if: matrix.os == 'macos-latest'
       run: |
-        npm run make
+        echo "Checking if APPLE_ID secret is available..."
+        if [ -z "$APPLE_ID" ]; then
+          echo "❌ APPLE_ID is not set or empty"
+        else
+          echo "✅ APPLE_ID is available (length: ${#APPLE_ID})"
+        fi
+        
+        if [ -z "$APPLE_SIGN_IDENTITY" ]; then
+          echo "❌ APPLE_SIGN_IDENTITY is not set or empty"
+        else
+          echo "✅ APPLE_SIGN_IDENTITY is available"
+        fi
+        
+        if [ -z "${{ secrets.APPLE_CERTIFICATE }}" ]; then
+          echo "❌ APPLE_CERTIFICATE is not set or empty"
+        else
+          echo "✅ APPLE_CERTIFICATE is available"
+        fi
+      env:
+        APPLE_ID: ${{ secrets.APPLE_ID }}
+        APPLE_SIGN_IDENTITY: ${{ secrets.APPLE_SIGN_IDENTITY }}
+    
+    - name: Setup Apple Certificate (macOS only)
+      if: matrix.os == 'macos-latest'
+      run: |
+        # Create keychain
+        security create-keychain -p "${{ secrets.KEYCHAIN_PASSWORD || 'temp_password' }}" build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p "${{ secrets.KEYCHAIN_PASSWORD || 'temp_password' }}" build.keychain
+        security set-keychain-settings -t 3600 -u build.keychain
+        
+        # Import certificate if available
+        if [ ! -z "${{ secrets.APPLE_CERTIFICATE }}" ]; then
+          echo "Importing Apple certificate..."
+          echo "${{ secrets.APPLE_CERTIFICATE }}" | base64 --decode > certificate.p12
+          security import certificate.p12 -k build.keychain -P "${{ secrets.APPLE_CERTIFICATE_PASSWORD }}" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "${{ secrets.KEYCHAIN_PASSWORD || 'temp_password' }}" build.keychain
+          echo "Certificate imported successfully"
+        else
+          echo "No APPLE_CERTIFICATE provided, skipping certificate setup"
+        fi
+    
+    - name: Build Application
+      run: npm run make
+      env:
+        CI: true
+        BASE_URL: ${{ secrets.BASE_URL || 'https://www.robolike.com' }}
+        APPLE_ID: ${{ secrets.APPLE_ID }}
+        APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+        APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        APPLE_SIGN_IDENTITY: ${{ secrets.APPLE_SIGN_IDENTITY }}
     
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4

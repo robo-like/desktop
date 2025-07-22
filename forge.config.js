@@ -7,21 +7,29 @@ module.exports = {
   packagerConfig: {
     asar: true,
     icon: "./icons/icon", // Base name, platform extensions added automatically
-    osxSign: {
-      identity: process.env.APPLE_SIGN_IDENTITY,
-    },
-    osxNotarize: {
-      appleId: process.env.APPLE_ID,
-      appleIdPassword: process.env.APPLE_PASSWORD,
-      teamId: process.env.APPLE_TEAM_ID,
-    },
+    // Explicitly disable signing for local development
+    osxSign: false,
+    osxNotarize: false,
+    // Enable signing only in CI with proper credentials
+    ...(process.env.CI && process.env.APPLE_SIGN_IDENTITY ? {
+      osxSign: {
+        identity: process.env.APPLE_SIGN_IDENTITY,
+        'hardened-runtime': true,
+        'gatekeeper-assess': false,
+      },
+      osxNotarize: {
+        appleId: process.env.APPLE_ID,
+        appleIdPassword: process.env.APPLE_PASSWORD,
+        teamId: process.env.APPLE_TEAM_ID,
+      },
+    } : {}),
   },
   rebuildConfig: {},
   makers: [
     {
       name: "@electron-forge/maker-squirrel",
       config: {
-        iconUrl: "https://robolike.com/favicon.ico",
+        iconUrl: "https://www.robolike.com/favicon.ico",
         setupIcon: "./icons/icon.ico",
       },
     },

@@ -303,14 +303,6 @@ btnStart.addEventListener("click", async () => {
   if (!likeInterval) {
     const selectedHashtag = inputHashtag.value;
     localStorage.setItem("hashtag", selectedHashtag);
-    const accessToken = new URLSearchParams(window.location.search).get(
-      "accessToken"
-    );
-
-    // Set access token for analytics
-    if (accessToken) {
-      await window.electronAPI.analytics.setAccessToken(accessToken);
-    }
 
     localStorage.setItem("startTime", startTime.value);
     localStorage.setItem("endTime", endTime.value);
@@ -354,31 +346,29 @@ btnStart.addEventListener("click", async () => {
         return;
       }
 
-      const recentMediaResponse = await fetch(
-        `${BASE_URL}/api/instagram/hashtag/${selectedHashtag}/recent`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      // Use proxied API call through main process
+      const recentMediaResponse = await window.electronAPI.instagram.getRecentMedia(selectedHashtag);
 
-      // Unauthorized
+      // Handle errors
       if (recentMediaResponse.status === 401) {
         await window.electronAPI.analytics.trackAppError('authFailed', 'Unauthorized access to Instagram API', '401');
         alert("Unauthorized");
         return;
       }
 
-      // Payment required
       if (recentMediaResponse.status === 402) {
         await window.electronAPI.analytics.trackAppError('paymentRequired', 'Payment required for Instagram API', '402');
         alert("Payment required");
         return;
       }
 
-      const data = await recentMediaResponse.json();
+      if (recentMediaResponse.status !== 200) {
+        await window.electronAPI.analytics.trackAppError('networkError', `API request failed with status ${recentMediaResponse.status}`, recentMediaResponse.status.toString());
+        alert(`API request failed: ${recentMediaResponse.error || 'Unknown error'}`);
+        return;
+      }
+
+      const data = recentMediaResponse.data;
       if (data.posts) {
         const postToLike = data.posts.find(
           (post) => !likes.some((like) => like.id === post.id)
