@@ -7,7 +7,10 @@ module.exports = {
   packagerConfig: {
     asar: true,
     icon: "./icons/icon", // Base name, platform extensions added automatically
-    // Enable signing in CI or when certificate is available
+    // Explicitly disable signing for local development
+    osxSign: false,
+    osxNotarize: false,
+    // Enable signing only in CI with proper credentials
     ...(process.env.CI && process.env.APPLE_SIGN_IDENTITY ? {
       osxSign: {
         identity: process.env.APPLE_SIGN_IDENTITY,
@@ -19,10 +22,7 @@ module.exports = {
         appleIdPassword: process.env.APPLE_PASSWORD,
         teamId: process.env.APPLE_TEAM_ID,
       },
-    } : {
-      osxSign: false,
-      osxNotarize: false,
-    }),
+    } : {}),
   },
   rebuildConfig: {},
   makers: [
