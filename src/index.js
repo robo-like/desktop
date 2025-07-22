@@ -1,12 +1,11 @@
-require("dotenv").config();
-
-const { app, BrowserWindow, screen } = require("electron");
+const { app, BrowserWindow, screen, ipcMain } = require("electron");
 const path = require("node:path");
-
-const baseUrl = process.env.BASE_URL || "https://robolike.com";
+const config = require("./config");
+const analytics = require("./analytics");
 
 let mainWindow;
 let deeplinkingUrl = null;
+let storedAccessToken = null;
 
 /**
  * Check if user is authenticated by testing access to a protected endpoint
@@ -19,7 +18,7 @@ async function checkAuthStatus() {
     // Create a request to check authentication status with session cookies
     const request = net.request({
       method: 'GET',
-      url: `${baseUrl}/api/auth/status`,
+      url: `${config.baseUrl}${config.api.auth.status}`,
       useSessionCookies: true, // Use cookies from the session
       session: session.defaultSession, // Use the default session
     });
@@ -50,12 +49,12 @@ async function checkAuthStatus() {
 // Protocol handler setup
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
-    app.setAsDefaultProtocolClient("robolike", process.execPath, [
+    app.setAsDefaultProtocolClient(config.app.protocol, process.execPath, [
       path.resolve(process.argv[1]),
     ]);
   }
 } else {
-  app.setAsDefaultProtocolClient("robolike");
+  app.setAsDefaultProtocolClient(config.app.protocol);
 }
 
 // Handle Squirrel installer
@@ -76,7 +75,7 @@ if (!gotTheLock) {
  */
 function handleUrl(url) {
   if (url.includes("auth/confirm")) {
-    const cleanUrl = url.replace("robolike://", baseUrl + "/");
+    const cleanUrl = url.replace(`${config.app.protocol}://`, config.baseUrl + "/");
     mainWindow.loadURL(cleanUrl);
   }
 }
@@ -97,7 +96,7 @@ app.on("second-instance", (event, argv, workingDirectory) => {
   }
 
   // Windows: handle deep link from second instance
-  const url = argv.find((arg) => arg.startsWith("robolike://"));
+  const url = argv.find((arg) => arg.startsWith(`${config.app.protocol}://`));
   if (url) {
     deeplinkingUrl = url;
     handleUrl(deeplinkingUrl);
@@ -110,7 +109,7 @@ const createWindow = () => {
   mainWindow = new BrowserWindow({
     width,
     height,
-    title: "RoboLike - Instagram Automation",
+    title: config.app.title,
     webPreferences: {
       webviewTag: true,
       nodeIntegration: false,
@@ -121,15 +120,14 @@ const createWindow = () => {
   // Check authentication status before deciding where to navigate
   checkAuthStatus().then((isLoggedIn) => {
     if (!isLoggedIn) {
-      mainWindow.loadURL(`${baseUrl}/auth/login`);
+      mainWindow.loadURL(`${config.baseUrl}/auth/login`);
     } else {
-      1
       loadMainApp({});
     }
   }).catch((error) => {
     console.error('Auth check failed:', error);
     // If auth check fails, go to login
-    mainWindow.loadURL(`${baseUrl}/auth/login`);
+    mainWindow.loadURL(`${config.baseUrl}/auth/login`);
   });
 
   if (deeplinkingUrl) {
@@ -137,8 +135,104 @@ const createWindow = () => {
   }
 };
 
+// Setup IPC handlers for config
+ipcMain.handle('config:getBaseUrl', () => {
+  return config.baseUrl;
+});
+
+ipcMain.handle('config:getConfig', () => {
+  return config;
+});
+
+// Setup IPC handler for access token
+ipcMain.handle('auth:getAccessToken', () => {
+  return storedAccessToken;
+});
+
+// Setup IPC handler for Instagram API requests
+ipcMain.handle('instagram:getRecentMedia', async (event, hashtag) => {
+  try {
+    const { net, session } = require('electron');
+
+    const request = net.request({
+      method: 'GET',
+      url: `${config.baseUrl}/api/instagram/hashtag/${hashtag}/recent`,
+      useSessionCookies: true,
+      session: session.defaultSession,
+    });
+
+    request.setHeader('Content-Type', 'application/json');
+
+    return new Promise((resolve) => {
+      request.on('response', (response) => {
+        let body = '';
+        response.on('data', (chunk) => {
+          body += chunk;
+        });
+        response.on('end', () => {
+          try {
+            const data = JSON.parse(body);
+            resolve({
+              status: response.statusCode,
+              data: data
+            });
+          } catch (error) {
+            resolve({
+              status: response.statusCode,
+              error: 'Failed to parse response',
+              body: body
+            });
+          }
+        });
+      });
+
+      request.on('error', (error) => {
+        resolve({
+          status: 0,
+          error: error.message
+        });
+      });
+
+      request.end();
+    });
+  } catch (error) {
+    return {
+      status: 0,
+      error: error.message
+    };
+  }
+});
+
+// Setup IPC handlers for analytics
+ipcMain.handle('analytics:setAccessToken', (event, token) => {
+  analytics.setAccessToken(token);
+});
+
+ipcMain.handle('analytics:trackAppLogin', (event, method) => {
+  return analytics.trackAppLogin(method);
+});
+
+ipcMain.handle('analytics:trackLikesStarted', (event, options) => {
+  return analytics.trackLikesStarted(options);
+});
+
+ipcMain.handle('analytics:trackLikesStopped', (event, reason, totalLikes, duration) => {
+  return analytics.trackLikesStopped(reason, totalLikes, duration);
+});
+
+ipcMain.handle('analytics:trackPostLiked', (event, postData) => {
+  return analytics.trackPostLiked(postData);
+});
+
+ipcMain.handle('analytics:trackAppError', (event, errorType, errorMessage, errorCode) => {
+  return analytics.trackAppError(errorType, errorMessage, errorCode);
+});
+
 app.whenReady().then(() => {
   createWindow();
+
+  // Track app session start
+  analytics.trackAppSessionStart();
 
   // Set dock icon for macOS
   if (process.platform === 'darwin') {
@@ -155,7 +249,7 @@ app.whenReady().then(() => {
 
   // Windows: handle URI on initial launch
   if (process.platform === "win32") {
-    const url = process.argv.find((arg) => arg.startsWith("robolike://"));
+    const url = process.argv.find((arg) => arg.startsWith(`${config.app.protocol}://`));
     if (url) {
       deeplinkingUrl = url;
       handleUrl(deeplinkingUrl);
@@ -169,19 +263,34 @@ app.whenReady().then(() => {
   });
 
   mainWindow.webContents.on("will-navigate", (event, url) => {
-    if (url.includes("robolike://likes")) {
+    if (url.includes(`${config.app.protocol}://likes`)) {
       const urlObj = new URL(url);
       const searchParams = Object.fromEntries(urlObj.searchParams);
-      loadMainApp({
-        query: searchParams,
-      });
+      
+      // Securely store access token in main process
+      if (searchParams.accessToken) {
+        storedAccessToken = searchParams.accessToken;
+        analytics.setAccessToken(storedAccessToken);
+        console.log('Access token received and stored securely');
+      }
+      
+      // Load main app without passing access token in query params
+      loadMainApp({});
     }
   });
 });
 
 app.on("window-all-closed", () => {
+  // Track app session end
+  analytics.trackAppSessionEnd();
+  
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+app.on("before-quit", () => {
+  // Track app session end on quit
+  analytics.trackAppSessionEnd();
 });
 
