@@ -85,21 +85,14 @@ jobs:
           echo "✅ All Apple signing prerequisites are available. Build will be signed."
           echo ""
         fi
-      env:
-        APPLE_ID: ${{ secrets.APPLE_ID }}
-        APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-        APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        APPLE_SIGN_IDENTITY: ${{ secrets.APPLE_SIGN_IDENTITY }}
-        APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-        APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
     
     - name: Setup Apple Certificate (macOS only)
       if: matrix.os == 'macos-latest'
       run: |
         # Create keychain
-        security create-keychain -p "${{ secrets.KEYCHAIN_PASSWORD || 'temp_password' }}" build.keychain
+        security create-keychain -p "${{ secrets.KEYCHAIN_PASSWORD }}" build.keychain
         security default-keychain -s build.keychain
-        security unlock-keychain -p "${{ secrets.KEYCHAIN_PASSWORD || 'temp_password' }}" build.keychain
+        security unlock-keychain -p "${{ secrets.KEYCHAIN_PASSWORD }}" build.keychain
         security set-keychain-settings -t 3600 -u build.keychain
         
         # Import certificate if available
@@ -122,7 +115,6 @@ jobs:
         APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
         APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         APPLE_SIGN_IDENTITY: ${{ secrets.APPLE_SIGN_IDENTITY }}
-        APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
     
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4
