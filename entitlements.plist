@@ -11,5 +11,13 @@
     <!-- Required for network requests -->
     <key>com.apple.security.network.client</key>
     <true/>
+    
+    <!-- Required for URL scheme handling -->
+    <key>com.apple.security.automation.apple-events</key>
+    <true/>
+    
+    <!-- Required for app launch from URL schemes -->
+    <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+    <true/>
   </dict>
 </plist>

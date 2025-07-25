@@ -46,16 +46,7 @@ async function checkAuthStatus() {
   }
 }
 
-// Protocol handler setup
-if (process.defaultApp) {
-  if (process.argv.length >= 2) {
-    app.setAsDefaultProtocolClient(config.app.protocol, process.execPath, [
-      path.resolve(process.argv[1]),
-    ]);
-  }
-} else {
-  app.setAsDefaultProtocolClient(config.app.protocol);
-}
+// Protocol handler will be setup after app is ready
 
 // Handle Squirrel installer
 if (require("electron-squirrel-startup")) {
@@ -71,12 +62,41 @@ if (!gotTheLock) {
 }
 
 /**
- * 
+ * Handle deep link URLs
  */
 function handleUrl(url) {
+  console.log('Handling URL:', url);
+
+  if (!url || !url.startsWith(`${config.app.protocol}://`)) {
+    console.log('Invalid URL format:', url);
+    return;
+  }
+
+  // Ensure window is ready
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    console.log('Window not ready, storing URL for later');
+    deeplinkingUrl = url;
+    return;
+  }
+
   if (url.includes("auth/confirm")) {
     const cleanUrl = url.replace(`${config.app.protocol}://`, config.baseUrl + "/");
+    console.log('Loading auth confirm URL:', cleanUrl);
     mainWindow.loadURL(cleanUrl);
+  } else if (url.includes("likes")) {
+    // Handle likes URL with access token
+    const urlObj = new URL(url);
+    const searchParams = Object.fromEntries(urlObj.searchParams);
+
+    if (searchParams.accessToken) {
+      storedAccessToken = searchParams.accessToken;
+      analytics.setAccessToken(storedAccessToken);
+      console.log('Access token received and stored securely');
+    }
+
+    loadMainApp({});
+  } else {
+    console.log('Unknown URL pattern:', url);
   }
 }
 
@@ -131,7 +151,10 @@ const createWindow = () => {
   });
 
   if (deeplinkingUrl) {
-    handleUrl(deeplinkingUrl);
+    // Wait a bit for the window to be fully ready
+    setTimeout(() => {
+      handleUrl(deeplinkingUrl);
+    }, 100);
   }
 };
 
@@ -228,7 +251,26 @@ ipcMain.handle('analytics:trackAppError', (event, errorType, errorMessage, error
   return analytics.trackAppError(errorType, errorMessage, errorCode);
 });
 
+// macOS: handle URI
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+  console.log('Received URL on macOS:', url);
+  deeplinkingUrl = url;
+  handleUrl(deeplinkingUrl);
+});
+
 app.whenReady().then(() => {
+  // Register protocol handler after app is ready
+  if (process.defaultApp) {
+    if (process.argv.length >= 2) {
+      app.setAsDefaultProtocolClient(config.app.protocol, process.execPath, [
+        path.resolve(process.argv[1]),
+      ]);
+    }
+  } else {
+    app.setAsDefaultProtocolClient(config.app.protocol);
+  }
+
   createWindow();
 
   // Track app session start
@@ -240,12 +282,6 @@ app.whenReady().then(() => {
     app.dock.setIcon(path.join(process.cwd(), "icons", "icon.png"))
   }
 
-  // macOS: handle URI
-  app.on("open-url", (event, url) => {
-    event.preventDefault();
-    deeplinkingUrl = url;
-    handleUrl(deeplinkingUrl);
-  });
 
   // Windows: handle URI on initial launch
   if (process.platform === "win32") {
@@ -266,14 +302,14 @@ app.whenReady().then(() => {
     if (url.includes(`${config.app.protocol}://likes`)) {
       const urlObj = new URL(url);
       const searchParams = Object.fromEntries(urlObj.searchParams);
-      
+
       // Securely store access token in main process
       if (searchParams.accessToken) {
         storedAccessToken = searchParams.accessToken;
         analytics.setAccessToken(storedAccessToken);
         console.log('Access token received and stored securely');
       }
-      
+
       // Load main app without passing access token in query params
       loadMainApp({});
     }
@@ -283,7 +319,7 @@ app.whenReady().then(() => {
 app.on("window-all-closed", () => {
   // Track app session end
   analytics.trackAppSessionEnd();
-  
+
   if (process.platform !== "darwin") {
     app.quit();
   }

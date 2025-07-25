@@ -9,13 +9,21 @@ module.exports = {
     icon: "./icons/icon", // Base name, platform extensions added automatically
     osxSign: {},
     osxNotarize: false,
+    protocols: [
+      {
+        name: "Robolike",
+        schemes: ["robolike"],
+      },
+    ],
     ...(process.env.APPLE_SIGN_IDENTITY &&
       process.env.APPLE_ID &&
       process.env.APPLE_PASSWORD ? {
       osxSign: {
-        // identity: process.env.APPLE_SIGN_IDENTITY,
-        // 'hardened-runtime': true,
-        // 'gatekeeper-assess': false,
+        identity: process.env.APPLE_SIGN_IDENTITY,
+        'hardened-runtime': true,
+        'entitlements': 'entitlements.mac.plist',
+        'entitlements-inherit': 'entitlements.mac.plist',
+        'gatekeeper-assess': false
       },
       osxNotarize: {
         appleId: process.env.APPLE_ID,
@@ -73,6 +81,10 @@ module.exports = {
     ],
     mac: {
       category: "public.app-category.utilities",
+      entitlements: "entitlements.plist",
+      entitlementsInherit: "entitlements.plist",
+      hardenedRuntime: true,
+      gatekeeperAssess: false,
     },
     linux: {
       mimeTypes: ["x-scheme-handler/robolike"],
